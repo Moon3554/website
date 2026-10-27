@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniGuess - Quiz d'anime</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            bg: '#080a0f',
+                            card: '#11151f',
+                            cardBorder: '#1c2233',
+                            accent: '#8b5cf6',
+                            accentHover: '#7c3aed',
+                            gold: '#f59e0b',
+                            correct: '#10b981',
+                            wrong: '#ef4444'
+                        }
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.5s ease-in-out 1',
+                        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'pulse-glow': {
+                            '0%, 100%': {
+                                opacity: '0.4'
+                            },
+                            '50%': {
+                                opacity: '0.8'
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="simple-ui min-h-screen flex flex-col selection:bg-purple-600 selection:text-white">
+
+    <!-- Navigation -->
+    <header class="sticky top-0 z-40 bg-[#151619] border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showView('home')">
+                <div class="w-9 h-9 rounded-lg bg-purple-600 flex items-center justify-center">
+                    <i data-lucide="gamepad-2" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-tight text-white font-title">AniGuess</span>
+                </div>
+            </div>
+
+            <nav class="flex items-center gap-1">
+                <button id="nav-home" onclick="showView('home')" class="nav-btn flex items-center space-x-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all bg-purple-600 text-white">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>Jouer</span>
+        </button>
+
+                <button id="nav-profile" onclick="showView('profile')" class="nav-btn flex items-center space-x-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+          <i data-lucide="user" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Profil</span>
+        </button>
+
+                <button id="nav-leaderboard" onclick="showView('leaderboard')" class="nav-btn flex items-center space-x-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+          <i data-lucide="trophy" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Classement</span>
+        </button>
+
+                <button id="nav-admin" onclick="showView('admin')" class="nav-btn flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Admin</span>
+        </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- Pages -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Accueil -->
+        <section id="view-home" class="space-y-8">
+
+            <div class="text-center space-y-3 max-w-2xl mx-auto">
+                <h1 class="text-3xl sm:text-5xl font-black font-title">
+                    À toi de reconnaître <span class="text-purple-400">l'anime</span>
+                </h1>
+                <p class="text-gray-400 text-sm sm:text-base">
+                    Choisis un mode, devine les bonnes réponses et améliore ton score.
+                </p>
+
+                <div class="flex items-center justify-center pt-3">
+                    <div class="inline-flex items-center space-x-2 bg-gray-900/90 p-1.5 rounded-2xl border border-gray-800 shadow-lg text-xs font-bold">
+                        <span class="text-gray-400 px-2 flex items-center space-x-1.5">
+              <i data-lucide="languages" class="w-4 h-4 text-purple-400"></i>
+              <span>Titre des animes :</span>
+                        </span>
+                        <button id="lang-btn-romaji" type="button" onclick="setTitleLanguage('romaji')" class="px-3.5 py-1.5 rounded-xl bg-purple-600 text-white transition flex items-center space-x-1 shadow-md shadow-purple-600/30">
+              <span>Japonais</span>
+            </button>
+                        <button id="lang-btn-english" type="button" onclick="setTitleLanguage('english')" class="px-3.5 py-1.5 rounded-xl text-gray-400 hover:text-white transition flex items-center space-x-1">
+              <span>Anglais</span>
+            </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-5xl mx-auto pt-4 space-y-10">
+                <section class="space-y-4">
+                    <div class="flex items-end justify-between border-b border-gray-800 pb-3">
+                        <div>
+                            <h2 class="text-xl font-bold text-white font-title">Personnages</h2>
+                            <p class="text-sm text-gray-500">Devine de quel anime vient le personnage.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                        <div onclick="startGame('classic')" class="home-mode-card group relative rounded-2xl p-5 cursor-pointer flex flex-col justify-between">
+                            <div class="space-y-3 relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-purple-600/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
+                                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-lg font-bold font-title text-white">Classique</h3>
+                                <p class="text-xs text-gray-400 leading-relaxed">
+                                    10 personnages tirés au sort. 4 propositions par question. Idéal pour marquer de l'XP rapidement !
+                                </p>
+                            </div>
+                            <div class="pt-6 relative z-10">
+                                <span class="inline-flex items-center space-x-2 text-xs font-bold text-purple-400 group-hover:translate-x-1 transition">
+              <span>Lancer la partie</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div onclick="startGame('speedrun')" class="home-mode-card group relative rounded-2xl p-5 cursor-pointer flex flex-col justify-between">
+                            <div class="space-y-3 relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                                    <i data-lucide="timer" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-lg font-bold font-title text-white">Contre-la-montre</h3>
+                                <p class="text-xs text-gray-400 leading-relaxed">
+                                    60 secondes chrono pour deviner un maximum d'animes. Chaque bonne réponse rapporte +2s de temps !
+                                </p>
+                            </div>
+                            <div class="pt-6 relative z-10">
+                                <span class="inline-flex items-center space-x-2 text-xs font-bold text-amber-400 group-hover:translate-x-1 transition">
+              <span>Lancer le chrono</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div onclick="startGame('survival')" class="home-mode-card group relative rounded-2xl p-5 cursor-pointer flex flex-col justify-between">
+                            <div class="space-y-3 relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-pink-500/20 text-pink-400 flex items-center justify-center border border-pink-500/30">
+                                    <i data-lucide="flame" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-lg font-bold font-title text-white">Survie</h3>
+                                <p class="text-xs text-gray-400 leading-relaxed">
+                                    Vous avez 3 points de vie. Enchaînez les séries de bonnes réponses pour battre votre record personnel.
+                                </p>
+                            </div>
+                            <div class="pt-6 relative z-10">
+                                <span class="inline-flex items-center space-x-2 text-xs font-bold text-pink-400 group-hover:translate-x-1 transition">
+              <span>Tester sa survie</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div onclick="startGame('image-reveal')" class="home-mode-card group relative rounded-2xl p-5 cursor-pointer flex flex-col justify-between">
+                            <div class="space-y-3 relative z-10">
+                                <div class="w-12 h-12 rounded-xl bg-purple-600/15 text-purple-400 flex items-center justify-center">
+                                    <i data-lucide="scan-eye" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-lg font-bold font-title text-white">Image mystère</h3>
+                                <p class="text-xs text-gray-400 leading-relaxed">L'image se dévoile peu à peu. Trouve l'anime avant la fin des 10 secondes.</p>
+                            </div>
+                            <div class="pt-6 relative z-10">
+                                <span class="inline-flex items-center space-x-2 text-xs font-bold text-purple-400">
+              <span>Découvrir le mode</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-4">
+                    <div class="border-b border-gray-800 pb-3">
+                        <h2 class="text-xl font-bold text-white font-title">Musiques</h2>
+                        <p id="home-music-description" class="text-sm text-gray-500">Ajoute des extraits audio dans l'espace admin pour débloquer ces modes.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div id="home-music-mode-ost" onclick="startMusicGame('ost')" aria-disabled="true" class="home-mode-card is-unavailable rounded-2xl p-5">
+                            <div class="w-10 h-10 rounded-xl bg-gray-800 text-gray-400 flex items-center justify-center mb-3"><i data-lucide="music-2" class="w-5 h-5"></i></div>
+                            <h3 class="font-bold text-white">OST</h3>
+                            <p class="text-xs text-gray-500 mt-1">Bandes originales</p>
+                            <span id="home-music-status-ost" class="inline-block mt-4 text-[10px] uppercase tracking-wide text-gray-500">Bientôt</span>
+                        </div>
+                        <div id="home-music-mode-opening" onclick="startMusicGame('opening')" aria-disabled="true" class="home-mode-card is-unavailable rounded-2xl p-5">
+                            <div class="w-10 h-10 rounded-xl bg-gray-800 text-gray-400 flex items-center justify-center mb-3"><i data-lucide="audio-lines" class="w-5 h-5"></i></div>
+                            <h3 class="font-bold text-white">Opening</h3>
+                            <p class="text-xs text-gray-500 mt-1">Génériques d'ouverture</p>
+                            <span id="home-music-status-opening" class="inline-block mt-4 text-[10px] uppercase tracking-wide text-gray-500">Bientôt</span>
+                        </div>
+                        <div id="home-music-mode-ending" onclick="startMusicGame('ending')" aria-disabled="true" class="home-mode-card is-unavailable rounded-2xl p-5">
+                            <div class="w-10 h-10 rounded-xl bg-gray-800 text-gray-400 flex items-center justify-center mb-3"><i data-lucide="audio-lines" class="w-5 h-5"></i></div>
+                            <h3 class="font-bold text-white">Ending</h3>
+                            <p class="text-xs text-gray-500 mt-1">Génériques de fin</p>
+                            <span id="home-music-status-ending" class="inline-block mt-4 text-[10px] uppercase tracking-wide text-gray-500">Bientôt</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </section>
+
+        <!-- Partie -->
+        <section id="view-game" class="hidden space-y-6 max-w-3xl mx-auto">
+
+            <div class="flex items-center justify-between bg-[#11151f] px-5 py-3 rounded-2xl border border-gray-800">
+                <div class="flex items-center space-x-4">
+                    <button onclick="exitGamePrompt()" class="text-gray-400 hover:text-white p-1 rounded-lg">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+                    <span id="game-progress-label" class="text-xs font-bold text-gray-300">Question 1 / 10</span>
+                </div>
+
+                <div id="game-mode-indicator" class="flex items-center space-x-2 font-bold text-sm"></div>
+
+                <div class="flex items-center space-x-1.5 text-xs font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/30">
+                    <span>SCORE :</span>
+                    <span id="game-current-score">0</span>
+                </div>
+            </div>
+
+            <div class="w-full h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                <div id="game-bar-fill" class="h-full w-[10%] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"></div>
+            </div>
+
+            <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center space-y-4 relative overflow-hidden">
+                <div id="game-character-card" class="relative w-48 sm:w-56 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-purple-500/40">
+                    <img id="game-character-image" src="" alt="Personnage" class="reveal-image w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+
+                    <div class="absolute bottom-3 left-2 right-2 text-center">
+                        <h3 id="game-character-name" class="text-base sm:text-lg font-black text-white font-title drop-shadow-md truncate"></h3>
+                    </div>
+                </div>
+
+                <div id="game-music-card" class="hidden w-full max-w-xl rounded-2xl border border-gray-800 bg-gray-900 p-5 space-y-4">
+                    <div class="w-14 h-14 mx-auto rounded-xl bg-purple-600/20 text-purple-300 flex items-center justify-center">
+                        <i data-lucide="music-2" class="w-7 h-7"></i>
+                    </div>
+                    <p class="text-sm font-bold text-white">Écoute l'extrait et devine l'anime</p>
+                    <audio id="game-music-audio" controls preload="none" class="w-full"></audio>
+                    <video id="game-music-video" preload="none" playsinline aria-hidden="true" tabindex="-1" class="audio-source-video"></video>
+                    <button id="game-music-play" type="button" onclick="toggleMusicPlayback()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">Écouter l'extrait</button>
+                    <p id="game-music-play-status" aria-live="polite" class="text-xs text-gray-500">Le quiz masque la vidéo : seul le son est diffusé.</p>
+                    <p id="game-music-title" class="hidden text-xs text-gray-400"></p>
+                </div>
+
+                <p class="text-xs sm:text-sm text-gray-400 font-medium">
+                    <span id="game-question-label">De quel anime vient ce personnage ?</span>
+                </p>
+
+                <div id="game-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl pt-2"></div>
+            </div>
+
+        </section>
+
+        <!-- Résultats -->
+        <section id="view-results" class="hidden max-w-lg mx-auto space-y-6">
+
+            <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-400 p-[2px] shadow-xl shadow-purple-600/30">
+                    <div class="w-full h-full bg-[#0b0e14] rounded-[14px] flex items-center justify-center">
+                        <i data-lucide="trophy" class="w-8 h-8 text-amber-400"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <h2 class="text-2xl sm:text-3xl font-black font-title text-white">Partie Terminée !</h2>
+                    <p id="results-summary-text" class="text-xs text-gray-400"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 bg-gray-900/80 p-4 rounded-2xl border border-gray-800">
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-gray-500">Bonnes Réponses</div>
+                        <div id="results-score-count" class="text-2xl font-black text-purple-400">8 / 10</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-gray-500">Gain d'XP</div>
+                        <div id="results-xp-gained" class="text-2xl font-black text-amber-400">+250 XP</div>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-left bg-gray-950/60 p-4 rounded-2xl border border-gray-800">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span id="results-player-level" class="text-purple-300">Niveau 1</span>
+                        <span id="results-player-xp" class="text-gray-400 font-mono">150 / 300 XP</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-gray-800 overflow-hidden">
+                        <div id="results-xp-bar" class="h-full w-1/2 bg-gradient-to-r from-purple-500 to-amber-400 rounded-full transition-all duration-700"></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button onclick="restartSameGame()" class="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span>Rejouer</span>
+          </button>
+                    <button onclick="showView('home')" class="flex-1 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-sm transition flex items-center justify-center space-x-2 border border-gray-700">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>Accueil</span>
+          </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Profil -->
+        <section id="view-profile" class="hidden space-y-8 max-w-4xl mx-auto">
+
+            <div class="bg-gradient-to-r from-[#121624] via-[#171a2a] to-[#121422] rounded-3xl border border-gray-800 p-6 sm:p-8 shadow-2xl space-y-6">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+
+                    <div class="relative group cursor-pointer" onclick="openAvatarModal()" title="Cliquer pour changer d'avatar">
+                        <div class="w-24 h-24 rounded-3xl overflow-hidden border-2 border-purple-500 p-0.5 shadow-xl shadow-purple-600/20 group-hover:scale-105 transition">
+                            <img id="profile-avatar-img" src="" class="w-full h-full object-cover rounded-[22px]">
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 rounded-3xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs font-bold text-white transition">
+                            Modifier
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 flex-grow">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div class="flex items-center justify-center sm:justify-start space-x-2">
+                                <h2 id="profile-username" class="text-2xl sm:text-3xl font-black font-title text-white"></h2>
+                                <button onclick="editUsernamePrompt()" class="text-gray-400 hover:text-white p-1">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                            </div>
+                            <span id="profile-title-badge" class="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                Apprenti Otaku
+              </span>
+                        </div>
+
+                        <div class="space-y-1.5 max-w-md">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span id="profile-level-label" class="text-amber-400">Niveau 1</span>
+                                <span id="profile-xp-counter" class="text-gray-400 font-mono">0 / 100 XP</span>
+                            </div>
+                            <div class="w-full h-2.5 rounded-full bg-gray-800 overflow-hidden">
+                                <div id="profile-xp-bar" class="h-full w-0 bg-gradient-to-r from-purple-500 to-amber-400 rounded-full transition-all duration-700"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-[#11151f] p-4 rounded-2xl border border-gray-800 text-center space-y-1">
+                    <div class="text-[10px] uppercase font-bold text-gray-500">Parties Jouées</div>
+                    <div id="stat-games-played" class="text-2xl font-black text-white">0</div>
+                </div>
+
+                <div class="bg-[#11151f] p-4 rounded-2xl border border-gray-800 text-center space-y-1">
+                    <div class="text-[10px] uppercase font-bold text-gray-500">Précision</div>
+                    <div id="stat-win-rate" class="text-2xl font-black text-emerald-400">0%</div>
+                </div>
+
+                <div class="bg-[#11151f] p-4 rounded-2xl border border-gray-800 text-center space-y-1">
+                    <div class="text-[10px] uppercase font-bold text-gray-500">Meilleure Série</div>
+                    <div id="stat-best-streak" class="text-2xl font-black text-amber-400 flex items-center justify-center space-x-1.5">
+                        <i data-lucide="flame" class="w-5 h-5 text-amber-400"></i>
+                        <span id="stat-best-streak-val">0</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#11151f] p-4 rounded-2xl border border-gray-800 text-center space-y-1">
+                    <div class="text-[10px] uppercase font-bold text-gray-500">Total Réponses Bonnes</div>
+                    <div id="stat-total-correct" class="text-2xl font-black text-purple-400">0</div>
+                </div>
+            </div>
+
+            <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-6 space-y-4">
+                <h3 class="text-lg font-bold font-title text-white">Historique Récent</h3>
+                <div id="profile-history-list" class="space-y-2"></div>
+            </div>
+
+        </section>
+
+        <!-- Classement -->
+        <section id="view-leaderboard" class="hidden space-y-6 max-w-3xl mx-auto">
+
+            <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-800">
+                    <span class="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+            <i data-lucide="trophy" class="w-6 h-6"></i>
+          </span>
+                    <div>
+                        <h2 class="text-2xl font-black font-title text-white">Classement des Maîtres d'Anime</h2>
+                        <p class="text-xs text-gray-400">Les plus hauts niveaux et meilleures séries.</p>
+                    </div>
+                </div>
+
+                <div id="leaderboard-list" class="space-y-2 pt-2"></div>
+            </div>
+
+        </section>
+
+        <!-- Administration -->
+        <section id="view-admin" class="hidden space-y-6 max-w-5xl mx-auto">
+
+            <div class="bg-gradient-to-r from-purple-950/40 via-[#151926] to-amber-950/30 p-6 sm:p-8 rounded-3xl border border-amber-500/30 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <span class="p-2.5 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </span>
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-black font-title text-white">Panneau d'Administration</h2>
+                            <p class="text-xs sm:text-sm text-gray-400">Gère les personnages et les extraits audio des quiz.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <span id="admin-total-chars-count" class="px-3.5 py-1.5 rounded-xl bg-purple-950 text-purple-300 border border-purple-800 font-bold text-xs">
+            0 personnages
+          </span>
+                    <span id="admin-total-music-count" class="px-3.5 py-1.5 rounded-xl bg-gray-800 text-gray-300 border border-gray-700 font-bold text-xs">0 musiques</span>
+                </div>
+            </div>
+
+            <nav class="flex flex-wrap gap-2 border-b border-gray-800 pb-3" aria-label="Sections d'administration">
+                <button id="admin-tab-characters" onclick="setAdminSection('characters')" class="admin-tab px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-bold">Personnages</button>
+                <button id="admin-tab-music" onclick="setAdminSection('music')" class="admin-tab px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm font-bold">Musiques</button>
+            </nav>
+
+            <div id="admin-panel-characters" class="space-y-8">
+                <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-800">
+                        <h3 class="font-bold text-lg text-white flex items-center space-x-2">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-purple-400"></i>
+                            <span>Ajouter ou modifier un personnage</span>
+                        </h3>
+                        <button onclick="clearAllCharacters()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-red-950/60 text-gray-400 hover:text-red-300 text-xs font-semibold transition border border-gray-700">
+            Vider tous les personnages
+          </button>
+                    </div>
+
+                    <div class="bg-purple-950/20 border border-purple-900/40 p-4 rounded-2xl space-y-2">
+                        <label class="text-xs font-bold text-purple-300 flex items-center space-x-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Recherche automatique instantanée sur AniList (Optionnel) :</span>
+          </label>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-search-anilist" placeholder="Ex: Saitama, Gojo, Eren, Rem..." class="flex-grow px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition"
+                                onkeydown="if(event.key === 'Enter') searchAniListLive()">
+                            <button onclick="searchAniListLive()" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center space-x-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Rechercher</span>
+            </button>
+                        </div>
+                        <div id="admin-search-status" class="text-xs text-gray-400 min-h-[16px]"></div>
+                    </div>
+
+                    <form onsubmit="handleAddCharacterSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+
+                        <div class="md:col-span-2 space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-gray-300">Nom complet du Personnage :</label>
+                                    <div id="admin-char-exists-indicator" class="text-xs"></div>
+                                </div>
+                                <input type="text" id="admin-char-name" required oninput="updateAdminPreview()" placeholder="Ex: Monkey D. Luffy" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-gray-300">Titre de l'anime — Romaji :</label>
+                                    <span class="text-[10px] text-gray-500 font-medium">Le quiz peut aussi afficher le titre anglais</span>
+                                </div>
+                                <input type="text" id="admin-char-anime" required oninput="updateAdminPreview()" placeholder="Ex: Shingeki no Kyojin" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+                                <div id="admin-anime-suggestions" class="flex flex-wrap gap-1.5 mt-2 hidden"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-300 mb-1.5">Titre de l'anime — Anglais :</label>
+                                <input type="text" id="admin-char-anime-english" oninput="updateAdminPreview()" placeholder="Ex: Attack on Titan" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-300 mb-1.5">URL de l'image (Lien direct .png, .jpg ou web) :</label>
+                                <input type="url" id="admin-char-image" required oninput="updateAdminPreview()" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 font-mono text-xs">
+                            </div>
+
+                            <button type="submit" id="admin-submit-btn" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:brightness-110 text-white font-bold text-sm shadow-xl shadow-purple-600/30 transition flex items-center justify-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span id="admin-submit-btn-text">Enregistrer le personnage dans le jeu</span>
+            </button>
+                        </div>
+
+                        <div class="bg-gray-900/90 border border-gray-800 rounded-2xl p-4 flex flex-col items-center text-center space-y-3">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Aperçu en direct dans le jeu</span>
+
+                            <div id="admin-preview-status-pill" class="min-h-[22px]"></div>
+
+                            <div class="relative w-36 aspect-[3/4] rounded-xl overflow-hidden border-2 border-purple-500/60 shadow-lg">
+                                <img id="admin-preview-img" src="https://s4.anilist.co/file/anilistcdn/character/large/b40-Xy4kZ3oYI96T.png" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                                <div class="absolute bottom-2 left-1 right-1 text-center">
+                                    <span id="admin-preview-name" class="text-xs font-black text-white truncate block">Nom du Personnage</span>
+                                </div>
+                            </div>
+
+                            <div class="text-xs">
+                                <span class="text-gray-500 block text-[10px]">Bonne réponse associée :</span>
+                                <span id="admin-preview-anime" class="font-bold text-purple-300">Nom de l'Anime</span>
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="bg-[#11151f] border border-gray-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-gray-800">
+                        <h3 class="font-bold text-lg text-white">Personnages dans les Devinettes</h3>
+
+                        <div class="relative w-full sm:w-64">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                            <input type="text" id="admin-filter-input" oninput="renderAdminCharactersList()" placeholder="Filtrer par nom ou anime..." class="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+                        </div>
+                    </div>
+
+                    <div id="admin-characters-table" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="admin-panel-music" class="hidden space-y-6">
+                <div class="bg-[#11151f] border border-gray-800 rounded-2xl p-5 sm:p-7 space-y-5">
+                    <div class="border-b border-gray-800 pb-4">
+                        <h3 class="text-lg font-bold text-white">Trouver un opening ou un ending</h3>
+                        <p class="mt-1 text-xs text-gray-400">Recherche les thèmes par anime, préécoute les vidéos proposées, puis ajoute un morceau en un clic. Les OST restent à ajouter avec un lien audio direct.</p>
+                    </div>
+                    <form onsubmit="searchAnimeThemes(event)" class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3">
+                        <label class="sr-only" for="admin-theme-search">Nom de l'anime</label>
+                        <input id="admin-theme-search" required minlength="2" placeholder="Nom de l'anime (ex. Naruto)" class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+                        <label class="sr-only" for="admin-theme-search-type">Type de thème</label>
+                        <select id="admin-theme-search-type" class="px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white">
+              <option value="all">Opening + ending</option>
+              <option value="opening">Opening</option>
+              <option value="ending">Ending</option>
+            </select>
+                        <button type="submit" class="px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition">Rechercher</button>
+                    </form>
+                    <p class="text-[11px] text-gray-500">Catalogue : <a class="text-purple-300 underline" href="https://animethemes.moe/" target="_blank" rel="noopener noreferrer">AnimeThemes</a>. Les aperçus sont lus depuis leur source et soumis à leurs <a class="text-purple-300 underline"
+                            href="https://app.animethemes.moe/terms-of-service" target="_blank" rel="noopener noreferrer">conditions d'utilisation</a>.</p>
+                    <div id="admin-theme-search-status" role="status" aria-live="polite" class="text-xs text-gray-400"></div>
+                    <div id="admin-theme-search-results" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+
+                <div class="bg-[#11151f] border border-gray-800 rounded-2xl p-5 sm:p-7 space-y-5">
+                    <div class="border-b border-gray-800 pb-4">
+                        <h3 class="text-lg font-bold text-white">Ajouter un extrait audio</h3>
+                        <p class="mt-1 text-xs text-gray-400">Ajoute manuellement un fichier audio direct (MP3, OGG ou WAV), par exemple pour une OST. Utilise uniquement des fichiers que tu as le droit de partager.</p>
+                    </div>
+                    <form onsubmit="handleAddMusicSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label class="space-y-1.5">
+              <span class="block text-xs font-bold text-gray-300">Catégorie</span>
+              <select id="admin-music-category" required class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500">
+                <option value="ost">OST</option>
+                <option value="opening">Opening</option>
+                <option value="ending">Ending</option>
+              </select>
+            </label>
+                        <label class="space-y-1.5">
+              <span class="block text-xs font-bold text-gray-300">Nom du morceau</span>
+              <input id="admin-music-title" required maxlength="100" placeholder="Ex. Gurenge" class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+            </label>
+                        <label class="space-y-1.5">
+              <span class="block text-xs font-bold text-gray-300">Anime — japonais romanisé</span>
+              <input id="admin-music-anime-romaji" required maxlength="120" placeholder="Ex. Kimetsu no Yaiba" class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+            </label>
+                        <label class="space-y-1.5">
+              <span class="block text-xs font-bold text-gray-300">Anime — titre anglais</span>
+              <input id="admin-music-anime-english" required maxlength="120" placeholder="Ex. Demon Slayer" class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+            </label>
+                        <label class="space-y-1.5 sm:col-span-2">
+              <span class="block text-xs font-bold text-gray-300">URL directe du fichier audio / vidéo</span>
+              <input id="admin-music-url" type="url" required placeholder="https://exemple.com/extrait.mp3" class="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500">
+            </label>
+                        <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
+                            <p class="text-[11px] text-gray-500">Le sélecteur de langue du jeu utilisera le titre correspondant.</p>
+                            <button type="submit" class="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition">Ajouter la musique</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-[#11151f] border border-gray-800 rounded-2xl p-5 sm:p-7 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 pb-3">
+                        <h3 class="text-lg font-bold text-white">Bibliothèque audio</h3>
+                        <select id="admin-music-filter" onchange="renderAdminMusicList()" aria-label="Filtrer par catégorie" class="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-xs text-white">
+              <option value="all">Toutes les catégories</option>
+              <option value="ost">OST</option>
+              <option value="opening">Opening</option>
+              <option value="ending">Ending</option>
+            </select>
+                    </div>
+                    <div id="admin-music-list" class="space-y-3 max-h-[550px] overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modale avatar -->
+    <div id="avatar-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="relative max-w-md w-full bg-[#151922] border border-gray-700 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 class="font-bold text-lg text-white">Choisir votre avatar</h3>
+                <button onclick="closeAvatarModal()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+            </div>
+            <p class="text-xs text-gray-400">Sélectionnez le personnage qui représentera votre profil :</p>
+
+            <div id="avatar-selection-grid" class="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <div id="game-toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none bg-gray-900 border border-purple-500/40 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3">
+        <i id="toast-icon" data-lucide="sparkles" class="w-5 h-5 text-purple-400 flex-shrink-0"></i>
+        <span id="toast-text" class="text-sm font-semibold"></span>
+    </div>
+
+    <script src="data/quizData.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

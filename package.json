@@ -1,0 +1,12 @@
+{
+  "name": "kyara-clone",
+  "version": "1.0.0",
+  "description": "Jeu de cartes et gacha d'anime inspiré de kyara.games",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["tcg", "anime", "kyara", "cards", "gacha"],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap');
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #101114;
+  color: #f1f5f9;
+}
+
+h1, h2, h3, .font-title {
+  font-family: 'Outfit', sans-serif;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.shake-anim {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pop-anim {
+  animation: pop 0.3s ease-in-out;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080a0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1c2233;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a334d;
+}
+
+.simple-ui .bg-gradient-to-r,
+.simple-ui .bg-gradient-to-tr {
+  background-image: none;
+}
+
+.simple-ui .shadow-xl,
+.simple-ui .shadow-2xl,
+.simple-ui .shadow-lg {
+  box-shadow: none;
+}
+
+.simple-ui .rounded-3xl {
+  border-radius: 1rem;
+}
+
+.simple-ui .rounded-2xl {
+  border-radius: .75rem;
+}
+
+.simple-ui .home-mode-card {
+  min-height: 210px;
+  background: #18191d;
+  border: 1px solid #303137;
+  transition: border-color .2s, transform .2s;
+}
+
+.simple-ui .home-mode-card:hover {
+  transform: translateY(-2px);
+  border-color: #8b5cf6;
+}
+
+.simple-ui .home-mode-card.is-unavailable {
+  opacity: .62;
+  cursor: not-allowed;
+}
+
+.simple-ui .home-mode-card.is-unavailable:hover {
+  transform: none;
+  border-color: #303137;
+}
+
+.reveal-image {
+  transition: filter .8s ease;
+}
+
+.audio-source-video {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  clip-path: inset(50%);
+}
